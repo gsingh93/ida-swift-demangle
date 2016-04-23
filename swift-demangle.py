@@ -13,7 +13,8 @@ class myplugin_t(idaapi.plugin_t):
         return idaapi.PLUGIN_OK
 
     def run(self, arg):
-        for funcea in Functions(SegStart(ScreenEA()), SegEnd(ScreenEA())):
+        seg = idaapi.get_segm_by_name('.plt');
+        for funcea in Functions(seg.startEA, seg.endEA):
             func_name = GetFunctionName(funcea)[1:]
             demangled_output = self.demangle(func_name).split(' ---> ')
 
@@ -26,11 +27,11 @@ class myplugin_t(idaapi.plugin_t):
             self.comment_xrefs(funcea, demangled_name)
 
     def demangle(self, name):
-        return subprocess.check_output(['C:/users/gulshan/winexecve.exe', '/bin/swift-demangle', name[0:]])
+        return subprocess.check_output(['C:/users/gulshan/winexecve.exe', '/bin/swift-demangle', name])
 
     def comment_xrefs(self, ea, comment):
         for xref in XrefsTo(ea):
-            MakeComm(xref.frm, comment)
+            idaapi.add_long_cmt(xref.frm, 1, comment)
 
     def term(self):
         pass
