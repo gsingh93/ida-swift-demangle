@@ -1,19 +1,22 @@
 import idaapi
 import subprocess
 
-class myplugin_t(idaapi.plugin_t):
-    flags = idaapi.PLUGIN_UNL
-    comment = 'Demangles Swift function names'
+class SwiftDemangle(idaapi.action_handler_t):
+    def __init__(self):
+        idaapi.action_handler_t.__init__(self)
 
-    help = "Demangles Swift function names"
-    wanted_name = "Swift function demangler"
-    wanted_hotkey = "Ctrl-H"
+    def update(self, ctx):
+        return idaapi.AST_ENABLE_ALWAYS
 
-    def init(self):
-        return idaapi.PLUGIN_OK
+    def activate(self, ctx):
+        print 'Starting Swift demangling'
 
-    def run(self, arg):
         seg = idaapi.get_segm_by_name('.plt');
+        # if seg == None:
+        #     print 'Segment .plt was not found, exiting'
+        #     return
+
+        count = 0
         for funcea in Functions(seg.startEA, seg.endEA):
             func_name = GetFunctionName(funcea)[1:]
             demangled_output = self.demangle(func_name).split(' ---> ')
@@ -24,17 +27,26 @@ class myplugin_t(idaapi.plugin_t):
             if name == demangled_name:
                 continue
 
+            count += 1
             self.comment_xrefs(funcea, demangled_name)
+
+        print 'Successfully demangled %d functions' % count
 
     def demangle(self, name):
         return subprocess.check_output(['C:/users/gulshan/winexecve.exe', '/bin/swift-demangle', name])
-
     def comment_xrefs(self, ea, comment):
         for xref in XrefsTo(ea):
             idaapi.add_long_cmt(xref.frm, 1, comment)
 
-    def term(self):
-        pass
+action_desc = idaapi.action_desc_t(
+    'swift-demangle',
+    'Demangle swift functions',
+    SwiftDemangle(),
+)
 
-def PLUGIN_ENTRY():
-    return myplugin_t()
+idaapi.register_action(action_desc)
+idaapi.attach_action_to_menu(
+    'Edit/Plugins/Jump to next fixup',
+    'swift-demangle',
+    idaapi.SETMENU_APP,
+)
