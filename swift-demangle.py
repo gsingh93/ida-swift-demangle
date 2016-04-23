@@ -33,7 +33,8 @@ class SwiftDemangle(idaapi.action_handler_t):
         print 'Successfully demangled %d functions' % count
 
     def demangle(self, name):
-        return subprocess.check_output(['C:/users/gulshan/winexecve.exe', '/bin/swift-demangle', name])
+        return subprocess.check_output(['/usr/bin/swift-demangle', name])
+
     def comment_xrefs(self, ea, comment):
         for xref in XrefsTo(ea):
             idaapi.add_long_cmt(xref.frm, 1, comment)
